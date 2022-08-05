@@ -2,7 +2,7 @@ const express = require('express')
 const fileUpload = require('express-fileupload')
 const app = express()
 
-app.use(express.static('public'))
+app.use('/storage', express.static('storage'))
 
 app.use(fileUpload({
   createParentPath: true,
