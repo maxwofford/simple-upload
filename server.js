@@ -14,6 +14,7 @@ app.use('/storage', express.static('storage'))
 app.use(fileUpload({
   createParentPath: true,
   useTempFiles: true,
+  safeFileNames: true,
   // Limits are being set by nginx
   // limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
 }))
