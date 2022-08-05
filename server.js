@@ -2,13 +2,20 @@ const express = require('express')
 const fileUpload = require('express-fileupload')
 const app = express()
 
+// CORS allow all
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*")
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
+  next()
+})
+
 app.use('/storage', express.static('storage'))
 
 app.use(fileUpload({
   createParentPath: true,
   useTempFiles: true,
+  // Limits are being set by nginx
   // limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
-  // limits: { fileSize: 50 * 1024 }, // 50KB
 }))
 
 app.post('/upload', function(req, res) {
