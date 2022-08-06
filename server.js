@@ -1,18 +1,9 @@
 const express = require('express')
 const fileUpload = require('express-fileupload')
 const app = express()
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer-core')
 
-const PORT = 3002;
-
-let browser;
-
-(async () => {
-  browser = await puppeteer.launch({
-    executablePath: '/run/current-system/sw/bin/google-chrome-stable',
-    headless: true,
-  });
-})();
+const PORT = 3000
 
 // CORS allow all
 app.use(function (req, res, next) {
@@ -50,20 +41,12 @@ app.post('/upload', function (req, res) {
   })
 })
 
-app.get('/png/:id', async (req, res) => {
-  res.redirect(`/screenshot?doNotAddStyles=true&waitForAssemble=true&url=https%3A%2F%2Fas.hack.af%2Fcard.html%3Fid%3D${req.params.id}%26scale6x%3Dtrue&height=3600&width=2400`);
-})
-
 app.get('/screenshot', async (req, res) => {
+  const { id } = req.query
 
   const usage = "https://s.vercel.app/api?url=https://google.com&width=1280&height=720"
-  if (!req.query.url) return res.status(400).json({
-    "success": false,
-    "error": "No url query specified.",
-    "usage": usage
-  });
   try {
-    const file = await getScreenshot(req.query.url, req.query.width, req.query.height, req.query.doNotAddStyles == 'true', req.query.waitForAssemble == 'true');
+    const file = await getScreenshot(id)
     res.setHeader('Content-Type', `image/png`);
     res.setHeader('Cache-Control', `public, immutable, no-transform, s-maxage=31536000, max-age=31536000`);
     res.status(200).end(file);
@@ -83,23 +66,33 @@ app.listen(PORT || 3000, () => {
   console.log('running server...')
 })
 
-async function getScreenshot(url, width, height, dontAddStyle, waitFor) {
-  console.log('opening new page')
-  const page = await browser.newPage();
-  await page.goto(url);
-  console.log('went to url')
-  await page.setViewport({ width: Number(width) || 1280, height: Number(height) || 720 });
+async function getScreenshot(id) {
+  const browser = await puppeteer.launch({
+    executablePath: '/run/current-system/sw/bin/google-chrome-stable',
+    headless: true,
+  })
 
-  if (waitFor) await page.waitForFunction('window.AssembleScrapbookCardView__Ready == true');
+  let file
 
-  console.log('waiting for assemble')
-  if (waitFor) Promise.any([
-    page.waitForFunction('window.AssembleScrapbookCardView__Ready == true'),
-    new Promise(r => setTimeout(r, 10000))
-  ]);
-  console.log('getting screenshot')
-  const file = await page.screenshot({ fullPage: true, omitBackground: true });
-  console.log('closing');
-  page.close();
-  return file;
+  try {
+    console.log('opening new page')
+    const page = await browser.newPage()
+    await page.goto(`https://as.hack.af/card.html?id=${id}`)
+    console.log('went to url')
+    await page.setViewport({ width: 2400, height: 3600 })
+
+    await page.waitForFunction('window.AssembleScrapbookCardView__Ready == true')
+
+    console.log('waiting for assemble')
+    await page.waitForFunction('window.AssembleScrapbookCardView__Ready == true')
+
+    console.log('getting screenshot')
+    file = await page.screenshot({ fullPage: true, omitBackground: true })
+    console.log('closing')
+  } catch (e) {
+    console.log(e)
+  } finally {
+    await browser.close()
+  }
+  return file
 }
