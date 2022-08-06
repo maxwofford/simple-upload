@@ -48,7 +48,7 @@ app.post('/upload', function(req, res) {
 })
 
 app.get('/png/:id', async (req, res) => {
-  res.redirect(`http://localhost:3002/screenshot?doNotAddStyles=true&waitForAssemble=true&url=https%3A%2F%2Fas.hack.af%2Fcard.html%3Fid%3D${req.params.id}%26scale6x%3Dtrue&height=3600&width=2400`);
+  res.redirect(`/screenshot?doNotAddStyles=true&waitForAssemble=true&url=https%3A%2F%2Fas.hack.af%2Fcard.html%3Fid%3D${req.params.id}%26scale6x%3Dtrue&height=3600&width=2400`);
 })
 
 app.get('/screenshot', async (req, res) => {
