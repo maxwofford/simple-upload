@@ -8,11 +8,14 @@ const PORT = 3002;
 let browser;
 
 (async () => {
-  browser = await puppeteer.launch();
+  browser = await puppeteer.launch({
+    executablePath: '/run/current-system/sw/bin/google-chrome-stable',
+    headless: true,
+  });
 })();
 
 // CORS allow all
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*")
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
   next()
@@ -29,7 +32,7 @@ app.use(fileUpload({
   // limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
 }))
 
-app.post('/upload', function(req, res) {
+app.post('/upload', function (req, res) {
 
   let file = req.files?.file
   if (!file) {
@@ -38,7 +41,7 @@ app.post('/upload', function(req, res) {
 
   let md5 = file.md5
   let uploadPath = `/storage/${md5}/${file.name}`
-  file.mv(__dirname + uploadPath, function(err) {
+  file.mv(__dirname + uploadPath, function (err) {
     if (err) {
       return res.status(500).send(err)
     }
@@ -86,6 +89,9 @@ async function getScreenshot(url, width, height, dontAddStyle, waitFor) {
   await page.goto(url);
   console.log('went to url')
   await page.setViewport({ width: Number(width) || 1280, height: Number(height) || 720 });
+
+  if (waitFor) await page.waitForFunction('window.AssembleScrapbookCardView__Ready == true');
+
   console.log('waiting for assemble')
   if (waitFor) Promise.any([
     page.waitForFunction('window.AssembleScrapbookCardView__Ready == true'),
