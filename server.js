@@ -6,11 +6,14 @@ const puppeteer = require('puppeteer-core');
 let browser;
 
 (async () => {
-  browser = await puppeteer.launch();
+  browser = await puppeteer.launch({
+    executablePath: '/run/current-system/sw/bin/google-chrome-stable',
+    headless: true,
+  });
 })();
 
 // CORS allow all
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*")
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
   next()
@@ -27,7 +30,7 @@ app.use(fileUpload({
   // limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
 }))
 
-app.post('/upload', function(req, res) {
+app.post('/upload', function (req, res) {
 
   let file = req.files?.file
   if (!file) {
@@ -36,7 +39,7 @@ app.post('/upload', function(req, res) {
 
   let md5 = file.md5
   let uploadPath = `/storage/${md5}/${file.name}`
-  file.mv(__dirname + uploadPath, function(err) {
+  file.mv(__dirname + uploadPath, function (err) {
     if (err) {
       return res.status(500).send(err)
     }
@@ -78,7 +81,8 @@ async function getScreenshot(url, width, height, dontAddStyle, waitFor) {
   const page = await browser.newPage();
   await page.goto(url);
   await page.setViewport({ width: Number(width) || 1280, height: Number(height) || 720 });
-  if (!dontAddStyle) await page.addStyleTag({ content: `
+  if (!dontAddStyle) await page.addStyleTag({
+    content: `
 @import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 body, div {
   font-family: 'Albert Sans', sans-serif;
