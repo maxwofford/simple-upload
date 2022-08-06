@@ -3,6 +3,8 @@ const fileUpload = require('express-fileupload')
 const app = express()
 const puppeteer = require('puppeteer-core');
 
+const PORT = 3002;
+
 let browser;
 
 (async () => {
@@ -45,6 +47,10 @@ app.post('/upload', function(req, res) {
   })
 })
 
+app.get('/png/:id', async (req, res) => {
+  res.redirect(`http://localhost:3002/screenshot?doNotAddStyles=true&waitForAssemble=true&url=https%3A%2F%2Fas.hack.af%2Fcard.html%3Fid%3D${req.params.id}%26scale6x%3Dtrue&height=3600&width=2400`);
+})
+
 app.get('/screenshot', async (req, res) => {
 
   const usage = "https://s.vercel.app/api?url=https://google.com&width=1280&height=720"
@@ -70,41 +76,24 @@ app.get('/screenshot', async (req, res) => {
   }
 })
 
-app.listen(3000, () => {
+app.listen(PORT || 3000, () => {
   console.log('running server...')
 })
 
 async function getScreenshot(url, width, height, dontAddStyle, waitFor) {
+  console.log('opening new page')
   const page = await browser.newPage();
   await page.goto(url);
+  console.log('went to url')
   await page.setViewport({ width: Number(width) || 1280, height: Number(height) || 720 });
-  if (!dontAddStyle) await page.addStyleTag({ content: `
-@import url('https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
-body, div {
-  font-family: 'Albert Sans', sans-serif;
-}
-html, body {
-  background-image: none!important;
-  background-color: none!important;
-  background: none!important;
-}
-.graph_instruction, .check, #check_answer_button, #sharing_box, #feedback_box, .footer_desktop, .footer_div, #inline_choices, div.push, .oops_title, .footer_inner_table, #native_ad_div {
-  display: none!important;
-}
-#steps_div {
-  border-radius: 12px;
-  box-shadow: none;
-  border: 3px solid #2ecc71;
-}
-.banner_ad {
-filter: opacity(0%);
-}
-div.done::after {
-  content: '!';
-}
-  ` });
-  if (waitFor) await page.waitForFunction('window.AssembleScrapbookCardView__Ready == true');
+  console.log('waiting for assemble')
+  if (waitFor) Promise.any([
+    page.waitForFunction('window.AssembleScrapbookCardView__Ready == true'),
+    new Promise(r => setTimeout(r, 10000))
+  ]);
+  console.log('getting screenshot')
   const file = await page.screenshot({ fullPage: true, omitBackground: true });
+  console.log('closing');
   page.close();
   return file;
 }
